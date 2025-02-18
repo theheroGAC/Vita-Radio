@@ -1,21 +1,29 @@
 #include "touch.h"
-#include <psp2/touch.h>
+#include <SDL2/SDL.h>
 #include <stdio.h>
 
 void init_touch() {
-    sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
-    printf("Touch inizializzato\n");
-}
-
-void update_touch() {
-    SceTouchData touch;
-    sceTouchPeek(SCE_TOUCH_PORT_FRONT, &touch, 1);
-    if (touch.reportNum > 0) {
-        printf("Touch rilevato: x=%d, y=%d\n", touch.report[0].x, touch.report[0].y);
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("Errore inizializzazione SDL: %s\n", SDL_GetError());
     }
 }
 
+bool is_touch_swipe_left() {
+    return false; // Implementa la logica con SDL
+}
+
+bool is_touch_swipe_right() {
+    return false; // Implementa la logica con SDL
+}
+
+bool is_touch_swipe_up() {
+    return false; // Implementa la logica con SDL
+}
+
+bool is_touch_swipe_down() {
+    return false; // Implementa la logica con SDL
+}
+
 void cleanup_touch() {
-    sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_STOP);
-    printf("Touch pulito\n");
+    SDL_Quit();
 }

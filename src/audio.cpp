@@ -1,18 +1,28 @@
 #include "audio.h"
-#include <psp2/audioout.h>
-#include <psp2/kernel/threadmgr.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include <stdio.h>
 
+// Variabile per gestire l'audio
+Mix_Music* music = NULL;
+
 void init_audio() {
-    // Inizializza l'audio
-    sceAudioOutInit();
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        printf("Errore nell'inizializzazione dell'audio: %s\n", SDL_GetError());
+        return;
+    }
+    if (Mix_OpenAudio(48000, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("Errore nell'apertura dell'audio: %s\n", Mix_GetError());
+        return;
+    }
 }
 
 void update_audio() {
-    // Aggiorna lo stato dell'audio (es. streaming radio)
+    // Qui puoi aggiungere la gestione dello streaming audio
 }
 
 void cleanup_audio() {
-    // Chiude l'audio e rilascia le risorse
-    sceAudioOutRelease();
+    Mix_FreeMusic(music);
+    Mix_CloseAudio();
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }

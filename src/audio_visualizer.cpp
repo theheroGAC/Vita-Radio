@@ -1,4 +1,8 @@
-#include <vita2d.h>
+#include "globals.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_ttf.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/ctrl.h>
 #include "audio.h"
@@ -10,9 +14,11 @@
 #include "audio_visualizer.h"
 #include <curl/curl.h>
 
-vita2d_texture* background;
-vita2d_texture* icon;
-vita2d_texture* startup_icon;
+SDL_Texture* background;
+SDL_Texture* icon;
+SDL_Texture* startup_icon;
+SDL_Renderer* renderer;
+SDL_Window* window;
 
 const char* shoutcast_stations[] = {
     "http://streaming.shoutcast.com/station1",
@@ -43,12 +49,13 @@ void adjust_volume(int direction) {
 }
 
 int main() {
-    vita2d_init();
-    vita2d_set_clear_color(RGBA8(0, 0, 0, 255));
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    window = SDL_CreateWindow("PSVita Radio", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 544, SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     
-    background = vita2d_load_PNG_file("app0:/assets/background.png");
-    icon = vita2d_load_PNG_file("app0:/assets/icon.png");
-    startup_icon = vita2d_load_PNG_file("app0:/assets/startup_icon.png");
+    background = IMG_LoadTexture(renderer, "app0:/assets/background.png");
+    icon = IMG_LoadTexture(renderer, "app0:/assets/icon.png");
+    startup_icon = IMG_LoadTexture(renderer, "app0:/assets/startup_icon.png");
     
     init_audio();
     init_network();
@@ -61,24 +68,20 @@ int main() {
     SceCtrlData pad;
     
     // Mostra icona di avvio per qualche secondo
-    vita2d_start_drawing();
-    vita2d_clear_screen();
-    vita2d_draw_texture(background, 0, 0);
-    vita2d_draw_texture(startup_icon, 300, 150);
-    vita2d_end_drawing();
-    vita2d_swap_buffers();
-    sceKernelDelayThread(2000000); // Ritardo di 2 secondi
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, background, NULL, NULL);
+    SDL_RenderCopy(renderer, startup_icon, NULL, NULL);
+    SDL_RenderPresent(renderer);
+    SDL_Delay(2000);
     
     start_shoutcast_stream(shoutcast_stations[current_station]); // Avvia lo streaming iniziale
     
     while (1) {
         sceCtrlPeekBufferPositive(0, &pad, 1);
         
-        vita2d_start_drawing();
-        vita2d_clear_screen();
-        
-        vita2d_draw_texture(background, 0, 0);
-        vita2d_draw_texture_tint(icon, 10, 10, RGBA8(255, 255, 255, 150)); // Icona con trasparenza
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, background, NULL, NULL);
+        SDL_RenderCopy(renderer, icon, NULL, NULL);
         
         update_gui();
         update_touch();
@@ -103,8 +106,7 @@ int main() {
             toggle_theme();
         }
         
-        vita2d_end_drawing();
-        vita2d_swap_buffers();
+        SDL_RenderPresent(renderer);
         
         if (should_exit()) {
             break;
@@ -113,16 +115,19 @@ int main() {
     
     stop_shoutcast_stream(); // Ferma lo streaming
     
-    vita2d_free_texture(background);
-    vita2d_free_texture(icon);
-    vita2d_free_texture(startup_icon);
+    SDL_DestroyTexture(background);
+    SDL_DestroyTexture(icon);
+    SDL_DestroyTexture(startup_icon);
     cleanup_audio();
     cleanup_network();
     cleanup_gui();
     cleanup_touch();
     cleanup_equalizer();
     
-    vita2d_fini();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
     sceKernelExitProcess(0);
     return 0;
 }
